@@ -1,25 +1,30 @@
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+// Az önce yaptığımız bileşeni içeri alıyoruz
+import Category from '../../components/Category';
 
 export default function HomeScreen() {
-  // Sayaç durumu (State)
   const [timer, setTimer] = useState('25:00');
-  const [isActive, setIsActive] = useState(false);
+  // Seçilen kategoriyi tutacak State (Başlangıçta boş)
+  const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
 
   return (
     <View style={styles.container}>
-      {/* Başlık */}
       <Text style={styles.headerTitle}>Odaklanma Seansı</Text>
 
-      {/* Sayaç Dairesi ve Metni */}
+      {/* Sayaç */}
       <View style={styles.timerContainer}>
         <Text style={styles.timerText}>{timer}</Text>
       </View>
 
-      {/* Kategori Bilgisi (Şimdilik Statik) */}
-      <Text style={styles.categoryText}>Kategori: Henüz Seçilmedi</Text>
+      {/* --- YENİ EKLENEN KISIM --- */}
+      {/* Category bileşenini buraya koyduk ve state'i bağladık */}
+      <Category
+        selectedId={selectedCategory}
+        onSelect={setSelectedCategory}
+      />
+      {/* ------------------------- */}
 
-      {/* Kontrol Butonları */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity style={[styles.button, styles.startButton]}>
           <Text style={styles.buttonText}>Başlat</Text>
@@ -39,25 +44,27 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1FAEE',
     alignItems: 'center',
     justifyContent: 'center',
+    paddingBottom: 40, // Aşağıda biraz boşluk kalsın
   },
   headerTitle: {
     fontSize: 24,
     fontWeight: 'bold',
     color: '#1D3557',
-    marginBottom: 40,
+    marginBottom: 30,
+    marginTop: 40,
   },
   timerContainer: {
     width: 250,
     height: 250,
     borderRadius: 125,
     borderWidth: 5,
-    borderColor: '#E63946', // Pomodoro Kırmızısı
+    borderColor: '#E63946',
     justifyContent: 'center',
     alignItems: 'center',
     backgroundColor: '#fff',
-    marginBottom: 30,
-    elevation: 5, // Android gölge
-    shadowColor: '#000', // iOS gölge
+    marginBottom: 20,
+    elevation: 5,
+    shadowColor: '#000',
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.2,
     shadowRadius: 4,
@@ -67,14 +74,10 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     color: '#1D3557',
   },
-  categoryText: {
-    fontSize: 16,
-    color: '#457B9D',
-    marginBottom: 40,
-  },
   buttonContainer: {
     flexDirection: 'row',
     gap: 20,
+    marginTop: 40, // Butonları biraz aşağı ittik
   },
   button: {
     paddingVertical: 15,
