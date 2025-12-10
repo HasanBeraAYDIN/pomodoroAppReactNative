@@ -1,36 +1,74 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
-// Az önce yaptığımız bileşeni içeri alıyoruz
 import Category from '../../components/Category';
+import { formatTime } from '../../utils/timeFormatter';
+
+const FOCUS_TIME = 25 * 60; // 25 Dakika
 
 export default function HomeScreen() {
-  const [timer, setTimer] = useState('25:00');
-  // Seçilen kategoriyi tutacak State (Başlangıçta boş)
+  const [timeLeft, setTimeLeft] = useState(FOCUS_TIME);
+  const [isActive, setIsActive] = useState(false);
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null);
+
+  // 1. MANTIK: Sadece "isActive" durumuna göre sayacı Başlat veya Durdur
+  useEffect(() => {
+    let interval: NodeJS.Timeout | null = null;
+
+    if (isActive) {
+      let interval = setInterval(() => {
+        setTimeLeft((prevTime) => (prevTime > 0 ? prevTime - 1 : 0));
+      }, 1000);
+    }
+
+    // isActive false olduğunda veya bileşen kapandığında sayacı temizle (Duraklatma işi burada)
+    return () => {
+      if (interval) clearInterval(interval);
+    };
+  }, [isActive]); // BURASI ÖNEMLİ: Artık timeLeft'e bağlı değil!
+
+  // 2. MANTIK: Süre bitti mi kontrolü
+  useEffect(() => {
+    if (timeLeft === 0) {
+      setIsActive(false);
+      // İleride buraya ses çalma veya bildirim gönderme eklenecek
+    }
+  }, [timeLeft]);
+
+  // Fonksiyonlar
+  const toggleTimer = () => setIsActive(!isActive);
+
+  const resetTimer = () => {
+    setIsActive(false);
+    setTimeLeft(FOCUS_TIME);
+  };
 
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Odaklanma Seansı</Text>
 
-      {/* Sayaç */}
       <View style={styles.timerContainer}>
-        <Text style={styles.timerText}>{timer}</Text>
+        <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
       </View>
 
-      {/* --- YENİ EKLENEN KISIM --- */}
-      {/* Category bileşenini buraya koyduk ve state'i bağladık */}
       <Category
         selectedId={selectedCategory}
         onSelect={setSelectedCategory}
       />
-      {/* ------------------------- */}
 
       <View style={styles.buttonContainer}>
-        <TouchableOpacity style={[styles.button, styles.startButton]}>
-          <Text style={styles.buttonText}>Başlat</Text>
+        <TouchableOpacity
+          style={[styles.button, styles.startButton]}
+          onPress={toggleTimer}
+        >
+          <Text style={styles.buttonText}>
+            {isActive ? 'Duraklat' : 'Başlat'}
+          </Text>
         </TouchableOpacity>
 
-        <TouchableOpacity style={[styles.button, styles.resetButton]}>
+        <TouchableOpacity
+          style={[styles.button, styles.resetButton]}
+          onPress={resetTimer}
+        >
           <Text style={styles.buttonText}>Sıfırla</Text>
         </TouchableOpacity>
       </View>
@@ -44,7 +82,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#F1FAEE',
     alignItems: 'center',
     justifyContent: 'center',
-    paddingBottom: 40, // Aşağıda biraz boşluk kalsın
+    paddingBottom: 40,
   },
   headerTitle: {
     fontSize: 24,
@@ -77,7 +115,7 @@ const styles = StyleSheet.create({
   buttonContainer: {
     flexDirection: 'row',
     gap: 20,
-    marginTop: 40, // Butonları biraz aşağı ittik
+    marginTop: 40,
   },
   button: {
     paddingVertical: 15,
