@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Alert } from 'react-native';
 import { AntDesign, MaterialIcons } from '@expo/vector-icons';
 import { formatTime } from '../../utils/timeFormatter';
+
 
 const DEFAULT_TIME = 25 * 60;
 
@@ -21,6 +22,16 @@ export default function HomeScreen() {
   // Kategori State'leri
   const [selectedCategory, setSelectedCategory] = useState(null); // Sadece ID değil, tüm objeyi tutabiliriz veya sadece ismi
   const [modalVisible, setModalVisible] = useState(false);
+  /**/
+  const handleSessionComplete = () => {
+    Alert.alert(
+      "Seans Tamamlandı! 🎉",
+      `Tebrikler!\n\nKategori: ${selectedCategory ? selectedCategory.name : 'Genel'}\nSüre: 25 dk`,
+      [
+        { text: "Tamam", onPress: () => resetTimer() }
+      ]
+    );
+  };
 
   useEffect(() => {
     if (!isActive) return;
@@ -30,6 +41,8 @@ export default function HomeScreen() {
         if (prev <= 1) {
           clearInterval(id);
           setIsActive(false);
+          /**/
+          handleSessionComplete();
           return 0;
         }
         return prev - 1;
