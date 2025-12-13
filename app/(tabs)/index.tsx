@@ -1,56 +1,75 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, Alert } from 'react-native';
-import { AntDesign, MaterialIcons } from '@expo/vector-icons';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity, Modal, FlatList, AppState, Alert } from 'react-native';
+import { AntDesign } from '@expo/vector-icons';
 import { formatTime } from '../../utils/timeFormatter';
-
 
 const DEFAULT_TIME = 25 * 60;
 
-// Örnek kategoriler (İleride veritabanından gelebilir)
 const CATEGORIES = [
   { id: '1', name: 'Ders Çalışma', icon: 'book' },
   { id: '2', name: 'Kodlama', icon: 'code' },
   { id: '3', name: 'Kitap Okuma', icon: 'book' },
-  { id: '4', name: 'Spor', icon: 'frowno' },
+  { id: '4', name: 'Proje', icon: 'book' },
 ];
-
 
 export default function HomeScreen() {
   const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
   const [isActive, setIsActive] = useState(false);
 
-  // Kategori State'leri
-  const [selectedCategory, setSelectedCategory] = useState(null); // Sadece ID değil, tüm objeyi tutabiliriz veya sadece ismi
+  // --- YENİ STATE'LER ---
+  const [distractionCount, setDistractionCount] = useState(0); // Dikkat dağınıklığı sayısı 
+  const appState = useRef(AppState.currentState); // Uygulamanın anlık durumu
+  // ----------------------
+
+  const [selectedCategory, setSelectedCategory] = useState(null);
   const [modalVisible, setModalVisible] = useState(false);
-  /**/
-  const handleSessionComplete = () => {
-    Alert.alert(
-      "Seans Tamamlandı! 🎉",
-      `Tebrikler!\n\nKategori: ${selectedCategory ? selectedCategory.name : 'Genel'}\nSüre: 25 dk`,
-      [
-        { text: "Tamam", onPress: () => resetTimer() }
-      ]
-    );
-  };
 
+  // 1. Sayaç Mantığı
   useEffect(() => {
-    if (!isActive) return;
+    let interval = null;
+    if (isActive && timeLeft > 0) {
+      interval = setInterval(() => {
+        setTimeLeft(prev => prev - 1);
+      }, 1000);
+    } else if (timeLeft === 0) {
+      // Süre bittiğinde
+      setIsActive(false);
+      handleSessionComplete();
+    }
+    return () => clearInterval(interval);
+  }, [isActive, timeLeft]);
 
-    const id = setInterval(() => {
-      setTimeLeft(prev => {
-        if (prev <= 1) {
-          clearInterval(id);
-          setIsActive(false);
-          /**/
-          handleSessionComplete();
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+  // 2. AppState (Dikkat Dağınıklığı) Takibi [cite: 21, 22, 23]
+  useEffect(() => {
+    const subscription = AppState.addEventListener('change', nextAppState => {
+      // Eğer sayaç aktifse ve uygulama arka plana (inactive/background) düştüyse
+      if (
+        appState.current.match(/active/) &&
+        nextAppState.match(/inactive|background/) &&
+        isActive
+      ) {
+        setIsActive(false); // Sayacı duraklat [cite: 23]
+        setDistractionCount(prev => prev + 1); // İhlal sayısını artır
+        Alert.alert("Dikkat Dağınıklığı!", "Uygulamadan çıktığınız için sayaç duraklatıldı.");
+      }
 
-    return () => clearInterval(id);
+      appState.current = nextAppState;
+    });
+
+    return () => {
+      subscription.remove();
+    };
   }, [isActive]);
+
+  const handleSessionComplete = () => {
+    // Seans bittiğinde özet göster 
+    Alert.alert(
+      "Tebrikler! 🎉",
+      `Seans Tamamlandı.\nKategori: ${selectedCategory?.name || 'Genel'}\nOdaklanma Süresi: ${DEFAULT_TIME / 60} dk\nDikkat Dağınıklığı: ${distractionCount} kez`,
+      [{ text: "Tamam", onPress: resetTimer }]
+    );
+    // BURAYA İLERİDE VERİTABANI KAYIT FONKSİYONU GELECEK
+  };
 
   const adjustTime = (minutes) => {
     setTimeLeft(prev => {
@@ -59,21 +78,37 @@ export default function HomeScreen() {
     });
   };
 
-  const toggleTimer = () => setIsActive(prev => !prev);
+  const toggleTimer = () => {
+    if (!isActive && !selectedCategory) {
+      Alert.alert("Uyarı", "Lütfen başlamadan önce bir kategori seçin.");
+      return;
+    }
+    setIsActive(prev => !prev);
+  };
 
   const resetTimer = () => {
     setIsActive(false);
     setTimeLeft(DEFAULT_TIME);
+    setDistractionCount(0); // Sayacı sıfırla
   };
 
   const handleSelectCategory = (category) => {
     setSelectedCategory(category);
-    setModalVisible(false); // Seçim yapınca modalı kapat
+    setModalVisible(false);
   };
 
   return (
     <View style={styles.container}>
       <Text style={styles.headerTitle}>Odaklanma Seansı</Text>
+
+      {/* --- Dikkat Dağınıklığı Göstergesi (Opsiyonel UI) --- */}
+      {distractionCount > 0 && (
+        <View style={{ marginBottom: 20, padding: 8, backgroundColor: '#FFEBEB', borderRadius: 8 }}>
+          <Text style={{ color: '#E63946', fontWeight: '600' }}>
+            Dikkat Dağınıklığı: {distractionCount}
+          </Text>
+        </View>
+      )}
 
       {/* Timer Alanı */}
       <View style={styles.timerWrapper}>
@@ -81,8 +116,11 @@ export default function HomeScreen() {
           <AntDesign name="minus" size={24} color="#1D3557" />
         </TouchableOpacity>
 
-        <View style={styles.timerContainer}>
+        <View style={[styles.timerContainer, isActive && styles.timerActiveBorder]}>
+          {/* Timer Text */}
           <Text style={styles.timerText}>{formatTime(timeLeft)}</Text>
+          {/* Status Text */}
+          <Text style={styles.statusText}>{isActive ? 'Odaklanıyor...' : 'Duraklatıldı'}</Text>
         </View>
 
         <TouchableOpacity style={styles.adjustmentButton} onPress={() => adjustTime(5)}>
@@ -90,7 +128,7 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* --- YENİ KATEGORİ SEÇİM ALANI --- */}
+      {/* ... KATEGORİ SEÇİCİ AYNI KALACAK ... */}
       <TouchableOpacity
         style={styles.categorySelector}
         onPress={() => setModalVisible(true)}
@@ -102,10 +140,10 @@ export default function HomeScreen() {
         <AntDesign name="down" size={16} color="#1D3557" style={{ marginLeft: 'auto' }} />
       </TouchableOpacity>
 
-      {/* --- KONTROL BUTONLARI --- */}
+      {/* ... BUTONLAR AYNI KALACAK ... */}
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.button, styles.startButton]}
+          style={[styles.button, styles.startButton, isActive ? { backgroundColor: '#E63946' } : {}]}
           onPress={toggleTimer}
         >
           <Text style={styles.buttonText}>
@@ -121,13 +159,14 @@ export default function HomeScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* --- MODAL (POP-UP) --- */}
+      {/* ... MODAL KODLARI AYNI KALACAK ... */}
       <Modal
         animationType="slide"
         transparent={true}
         visible={modalVisible}
         onRequestClose={() => setModalVisible(false)}
       >
+        {/* ... Modal İçeriği Aynı ... */}
         <View style={styles.modalOverlay}>
           <View style={styles.modalContent}>
             <View style={styles.modalHeader}>
@@ -170,6 +209,7 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
+  // ... Eski stillerin aynen kalacak ...
   container: {
     flex: 1,
     backgroundColor: '#F8FAFB',
@@ -188,7 +228,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     gap: 20,
-    marginBottom: 30, // Biraz boşluk arttırıldı
+    marginBottom: 30,
   },
   adjustmentButton: {
     width: 55,
@@ -214,7 +254,10 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.12,
     shadowRadius: 8,
     borderWidth: 4,
-    borderColor: '#E63946',
+    borderColor: '#a139e6ff',
+  },
+  timerActiveBorder: {
+    borderColor: '#2A9D8F', // Aktifken renk değişsin
   },
   timerText: {
     fontSize: 54,
@@ -222,8 +265,12 @@ const styles = StyleSheet.create({
     color: '#1D3557',
     letterSpacing: 1,
   },
-
-  /* --- YENİ EKLENEN STYLES --- */
+  statusText: {
+    fontSize: 16,
+    color: '#457B9D',
+    marginTop: 5,
+    fontWeight: '500'
+  },
   categorySelector: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -247,12 +294,10 @@ const styles = StyleSheet.create({
     color: '#1D3557',
     fontWeight: '600',
   },
-
-  /* --- MODAL STYLES --- */
   modalOverlay: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end', // Alttan açılması için
+    justifyContent: 'flex-end',
   },
   modalContent: {
     backgroundColor: 'white',
@@ -297,7 +342,6 @@ const styles = StyleSheet.create({
     color: '#FFF',
     fontWeight: 'bold',
   },
-
   buttonContainer: {
     flexDirection: 'row',
     gap: 20,
