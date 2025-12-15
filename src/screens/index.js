@@ -50,7 +50,7 @@ export default function HomeScreen() {
             interval = setInterval(() => {
                 setTimeLeft(prev => prev - 1);
             }, 1000);
-        } else if (timeLeft === 0) {
+        } else if (timeLeft === 0 && isActive) {
             setIsActive(false);
             handleSessionComplete();
         }
