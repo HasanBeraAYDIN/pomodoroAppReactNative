@@ -5,14 +5,14 @@ import { initDB, addSession } from '../data/database';
 
 // --- TEMA RENKLERİ ---
 const THEME = {
-    primary: '#4F46E5',     // Modern İndigo
-    secondary: '#E0E7FF',   // Çok açık İndigo (Arka planlar için)
-    background: '#F8FAFC',  // Kırık Beyaz / Gri
-    textMain: '#1E293B',    // Koyu Slate
-    textSub: '#64748B',     // Gri Metin
+    primary: '#4F46E5',
+    secondary: '#E0E7FF',
+    background: '#F8FAFC',
+    textMain: '#1E293B',
+    textSub: '#64748B',
     white: '#FFFFFF',
-    danger: '#EF4444',      // Kırmızı
-    success: '#10B981'      // Yeşil
+    danger: '#EF4444',
+    success: '#10B981'
 };
 
 const formatTime = (seconds) => {
@@ -31,7 +31,7 @@ const CATEGORIES = [
 ];
 
 export default function HomeScreen() {
-    // --- MANTIK KISMI AYNEN KORUNDU ---
+
     const [timeLeft, setTimeLeft] = useState(DEFAULT_TIME);
     const [isActive, setIsActive] = useState(false);
     const [sessionDuration, setSessionDuration] = useState(DEFAULT_TIME);
@@ -252,7 +252,7 @@ const styles = StyleSheet.create({
         width: 50,
         height: 50,
         borderRadius: 25,
-        backgroundColor: THEME.secondary, // Yumuşak arka plan
+        backgroundColor: THEME.secondary,
         justifyContent: 'center',
         alignItems: 'center',
     },
@@ -270,18 +270,18 @@ const styles = StyleSheet.create({
         shadowRadius: 20,
         elevation: 10,
         // KENARLIK
-        borderWidth: 15, // İsteğin üzerine kalınlaştırıldı
-        borderColor: THEME.secondary, // Pasifken açık renk
+        borderWidth: 15,
+        borderColor: THEME.secondary,
     },
     timerActiveBorder: {
-        borderColor: THEME.primary, // Aktifken canlı İndigo
+        borderColor: THEME.primary,
     },
     timerText: {
         fontSize: 56,
         fontWeight: '700',
         color: THEME.textMain,
         letterSpacing: 1,
-        fontVariant: ['tabular-nums'], // Sayıların titremesini önler
+        fontVariant: ['tabular-nums'],
     },
     statusText: {
         fontSize: 14,
@@ -301,7 +301,6 @@ const styles = StyleSheet.create({
         borderRadius: 20,
         width: '90%',
         marginBottom: 15,
-        // Eski border yerine gölge
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 4 },
         shadowOpacity: 0.05,
@@ -332,7 +331,7 @@ const styles = StyleSheet.create({
     button: {
         flex: 1,
         paddingVertical: 18,
-        borderRadius: 30, // Tam yuvarlak (pill shape)
+        borderRadius: 30,
         alignItems: 'center',
         justifyContent: 'center',
         flexDirection: 'row',
@@ -346,11 +345,11 @@ const styles = StyleSheet.create({
         elevation: 8,
     },
     stopButton: {
-        backgroundColor: '#F59E0B', // Turuncu
+        backgroundColor: '#F59E0B',
     },
     resetButton: {
         backgroundColor: THEME.secondary,
-        flex: 0.5, // Sıfırla butonu daha küçük
+        flex: 0.5,
     },
     buttonText: {
         color: '#fff',
@@ -361,7 +360,7 @@ const styles = StyleSheet.create({
     // --- MODAL ---
     modalOverlay: {
         flex: 1,
-        backgroundColor: 'rgba(0,0,0,0.4)', // Arka planı biraz daha kararttık
+        backgroundColor: 'rgba(0,0,0,0.4)',
         justifyContent: 'flex-end',
     },
     modalContent: {
